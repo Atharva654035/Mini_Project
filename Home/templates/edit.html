@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Complaint</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-6">
+  <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow">
+    <h1 class="text-2xl font-semibold mb-4">Edit Complaint #{{ complaint.id }}</h1>
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Full Name</label>
+          <input type="text" name="name" value="{{ complaint.name }}" class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg" required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Division</label>
+          <input type="text" name="division" value="{{ complaint.division }}" class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg" required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Category (Optional)</label>
+          <select name="category" class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+            <option value="">Select a category...</option>
+            {% for cat in categories %}
+              <option value="{{cat.id}}" {% if complaint.category and complaint.category.id == cat.id %}selected{% endif %}>{{cat.name}}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Priority</label>
+          <select name="priority" class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+            <option value="low" {% if complaint.priority == 'low' %}selected{% endif %}>Low</option>
+            <option value="medium" {% if complaint.priority == 'medium' %}selected{% endif %}>Medium</option>
+            <option value="high" {% if complaint.priority == 'high' %}selected{% endif %}>High</option>
+            <option value="urgent" {% if complaint.priority == 'urgent' %}selected{% endif %}>Urgent</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Complaint</label>
+          <textarea name="complaint" rows="5" class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg" required>{{ complaint.complaint }}</textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Replace Attachment (optional)</label>
+          <input type="file" name="complaint_img" class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg" />
+          {% if complaint.complaint_img %}
+            <p class="text-sm text-gray-500 mt-1">Current: <a href="{{ complaint.complaint_img.url }}" target="_blank" class="text-blue-600">View file</a></p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="mt-6 flex gap-3">
+        <a href="{% url 'home' %}" class="px-4 py-2 bg-gray-200 rounded">Cancel</a>
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

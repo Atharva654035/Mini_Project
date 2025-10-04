@@ -19,7 +19,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 
-from Home.views import (home, Admin_Login, Admin_Panel, login_page, signup_page, logout_page, download_complaints_pdf)
+from Home.views import (home, Admin_Login, Admin_Panel, login_page, signup_page, logout_page, download_complaints_pdf, view_complaint, edit_complaint, delete_complaint)
 
 urlpatterns = [
     path('', login_page, name='login_page'),
@@ -29,6 +29,12 @@ urlpatterns = [
     path('AdminLogin/', Admin_Login, name='Admin_Login'),
     path('AdminPanel/', Admin_Panel, name='Admin_Panel'),
     path('download-pdf/', download_complaints_pdf, name='download_complaints_pdf'),
+
+    # Complaint actions for users
+    path('complaints/<int:complaint_id>/', view_complaint, name='view_complaint'),
+    path('complaints/<int:complaint_id>/edit/', edit_complaint, name='edit_complaint'),
+    path('complaints/<int:complaint_id>/delete/', delete_complaint, name='delete_complaint'),
+
     path('admin/', admin.site.urls),
 ]
 

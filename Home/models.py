@@ -44,6 +44,8 @@ class Complaint(models.Model):
     complaint_date = models.DateTimeField(default=timezone.now)
     resolved_date = models.DateTimeField(null=True, blank=True)
     admin_response = models.TextField(blank=True)
+    action_taken = models.TextField(blank=True, help_text="Actions taken by admin to resolve the complaint")
+    action_image = models.FileField(upload_to='action_images/', blank=True, null=True, help_text="Image proof of action taken")
     
     def save(self, *args, **kwargs):
         if not self.pk:  # Only for new objects

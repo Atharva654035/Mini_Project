@@ -3,7 +3,7 @@ import textwrap
 from django.db import models
 from django.utils import timezone
 from django.core.files.storage import FileSystemStorage
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -115,6 +115,7 @@ def home(request):
     }
     return render(request, 'OpeningPage.html', context)
 
+
 def Admin_Login(request):
     if request.method == 'POST':
         username = request.POST.get('adminUsername')
@@ -159,6 +160,11 @@ def Admin_Panel(request):
             
             complaint.status = new_status
             complaint.admin_response = admin_response
+            complaint.action_taken = request.POST.get('action_taken', '')
+            
+            # Handle action image upload
+            if 'action_image' in request.FILES:
+                complaint.action_image = request.FILES['action_image']
             
             if new_status == 'resolved':
                 complaint.resolved_date = timezone.now()
@@ -171,7 +177,7 @@ def Admin_Panel(request):
                 updated_by=request.user,
                 old_status=old_status,
                 new_status=new_status,
-                update_message=admin_response
+                update_message=f"Response: {admin_response} | Action: {complaint.action_taken}"
             )
             
             messages.success(request, f'Complaint #{complaint_id} status updated to {new_status}')
@@ -289,84 +295,88 @@ def download_complaints_pdf(request):
     
     return response
 
-# @login_required(login_url='/')
-# def view_complaint(request, complaint_id):
-#     """View full complaint details"""
-#     try:
-#         complaint = Complaint.objects.get(id=complaint_id, user=request.user)
-#         return render(request, 'view_complaint.html', {'complaint': complaint})
-#     except Complaint.DoesNotExist:
-#         messages.error(request, 'Complaint not found or access denied.')
-#         return redirect('home')
-#
-# @login_required(login_url='/')
-# def edit_complaint(request, complaint_id):
-#     """Edit user's own complaint"""
-#     try:
-#         complaint = Complaint.objects.get(id=complaint_id, user=request.user)
-#
-#         # Only allow editing if complaint is still pending
-#         if complaint.status != 'pending':
-#             messages.error(request, 'You can only edit pending complaints.')
-#             return redirect('home')
-#
-#         if request.method == 'POST':
-#             # Update complaint fields
-#             complaint.name = request.POST.get('name')
-#             complaint.division = request.POST.get('division')
-#             complaint.complaint = request.POST.get('complaint')
-#             complaint.priority = request.POST.get('priority', 'medium')
-#
-#             # Handle category
-#             category_id = request.POST.get('category')
-#             if category_id:
-#                 try:
-#                     complaint.category = ComplaintCategory.objects.get(id=category_id)
-#                 except ComplaintCategory.DoesNotExist:
-#                     complaint.category = None
-#             else:
-#                 complaint.category = None
-#
-#             # Handle file upload
-#             new_file = request.FILES.get('complaint_img')
-#             if new_file:
-#                 complaint.complaint_img = new_file
-#
-#             complaint.save()
-#             messages.success(request, f'Complaint #{complaint_id} updated successfully!')
-#             return redirect('home')
-#
-#         categories = ComplaintCategory.objects.all()
-#         context = {
-#             'complaint': complaint,
-#             'categories': categories
-#         }
-#         return render(request, 'edit_complaint.html', context)
-#
-#     except Complaint.DoesNotExist:
-#         messages.error(request, 'Complaint not found or access denied.')
-#         return redirect('home')
-#
-# @login_required(login_url='/')
-# def delete_complaint(request, complaint_id):
-#     """Delete user's own complaint"""
-#     try:
-#         complaint = Complaint.objects.get(id=complaint_id, user=request.user)
-#
-#         # Only allow deletion if complaint is still pending
-#         if complaint.status != 'pending':
-#             messages.error(request, 'You can only delete pending complaints.')
-#             return redirect('home')
-#
-#         if request.method == 'POST':
-#             complaint_id_for_msg = complaint.id
-#             complaint.delete()
-#             messages.success(request, f'Complaint #{complaint_id_for_msg} deleted successfully!')
-#             return redirect('home')
-#
-#         return render(request, 'delete_complaint.html', {'complaint': complaint})
-#
-#     except Complaint.DoesNotExist:
-#         messages.error(request, 'Complaint not found or access denied.')
-#         return redirect('home')
-#
+@login_required(login_url='/')
+def view_complaint(request, complaint_id):
+    """View full complaint details"""
+    try:
+        # Allow admins to view any complaint, regular users only their own
+        if request.user.is_staff or request.user.is_superuser:
+            complaint = Complaint.objects.get(id=complaint_id)
+        else:
+            complaint = Complaint.objects.get(id=complaint_id, user=request.user)
+        return render(request, 'view.html', {'complaint': complaint})
+    except Complaint.DoesNotExist:
+        messages.error(request, 'Complaint not found or access denied.')
+        return redirect('home')
+
+@login_required(login_url='/')
+def edit_complaint(request, complaint_id):
+    """Edit user's own complaint"""
+    try:
+        complaint = Complaint.objects.get(id=complaint_id, user=request.user)
+
+        # Only allow editing if complaint is still pending
+        if complaint.status != 'pending':
+            messages.error(request, 'You can only edit pending complaints.')
+            return redirect('home')
+
+        if request.method == 'POST':
+            # Update complaint fields
+            complaint.name = request.POST.get('name')
+            complaint.division = request.POST.get('division')
+            complaint.complaint = request.POST.get('complaint')
+            complaint.priority = request.POST.get('priority', 'medium')
+
+            # Handle category
+            category_id = request.POST.get('category')
+            if category_id:
+                try:
+                    complaint.category = ComplaintCategory.objects.get(id=category_id)
+                except ComplaintCategory.DoesNotExist:
+                    complaint.category = None
+            else:
+                complaint.category = None
+
+            # Handle file upload
+            new_file = request.FILES.get('complaint_img')
+            if new_file:
+                complaint.complaint_img = new_file
+
+            complaint.save()
+            messages.success(request, f'Complaint #{complaint_id} updated successfully!')
+            return redirect('home')
+
+        categories = ComplaintCategory.objects.all()
+        context = {
+            'complaint': complaint,
+            'categories': categories
+        }
+        return render(request, 'edit.html', context)
+
+    except Complaint.DoesNotExist:
+        messages.error(request, 'Complaint not found or access denied.')
+        return redirect('home')
+
+@login_required(login_url='/')
+def delete_complaint(request, complaint_id):
+    """Delete user's own complaint"""
+    try:
+        complaint = Complaint.objects.get(id=complaint_id, user=request.user)
+
+        # Only allow deletion if complaint is still pending
+        if complaint.status != 'pending':
+            messages.error(request, 'You can only delete pending complaints.')
+            return redirect('home')
+
+        if request.method == 'POST':
+            complaint_id_for_msg = complaint.id
+            complaint.delete()
+            messages.success(request, f'Complaint #{complaint_id_for_msg} deleted successfully!')
+            return redirect('home')
+
+        return render(request, 'delete_confirm.html', {'complaint': complaint})
+
+    except Complaint.DoesNotExist:
+        messages.error(request, 'Complaint not found or access denied.')
+        return redirect('home')
+

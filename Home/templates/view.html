@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>View Complaint</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-6">
+  <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
+    <h1 class="text-2xl font-semibold mb-4">Complaint #{{ complaint.id }}</h1>
+    <dl class="divide-y divide-gray-200">
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="text-sm font-medium text-gray-500">Name</dt>
+        <dd class="mt-1 text-sm text-gray-900 col-span-2">{{ complaint.name }}</dd>
+      </div>
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="text-sm font-medium text-gray-500">Division</dt>
+        <dd class="mt-1 text-sm text-gray-900 col-span-2">{{ complaint.division }}</dd>
+      </div>
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="text-sm font-medium text-gray-500">Category</dt>
+        <dd class="mt-1 text-sm text-gray-900 col-span-2">{{ complaint.category.name|default:"N/A" }}</dd>
+      </div>
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="text-sm font-medium text-gray-500">Priority</dt>
+        <dd class="mt-1 text-sm text-gray-900 col-span-2">{{ complaint.get_priority_display }}</dd>
+      </div>
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="text-sm font-medium text-gray-500">Complaint</dt>
+        <dd class="mt-1 text-sm text-gray-900 col-span-2 whitespace-pre-wrap">{{ complaint.complaint }}</dd>
+      </div>
+      {% if complaint.complaint_img %}
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="text-sm font-medium text-gray-500">Attachment</dt>
+        <dd class="mt-1 text-sm text-blue-600 col-span-2"><a href="{{ complaint.complaint_img.url }}" target="_blank"><img src="{{ complaint.complaint_img.url }}" alt="Attachment" class="mt-2 max-w-md rounded border"></a>
+        </dd>
+      </div>
+      {% endif %}
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="text-sm font-medium text-gray-500">Status</dt>
+        <dd class="mt-1 text-sm text-gray-900 col-span-2">{{ complaint.get_status_display }}</dd>
+      </div>
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="text-sm font-medium text-gray-500">Admin Response</dt>
+        <dd class="mt-1 text-sm text-gray-900 col-span-2 whitespace-pre-wrap">{{ complaint.admin_response|default:"—" }}</dd>
+      </div>
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="text-sm font-medium text-gray-500">Action Taken</dt>
+        <dd class="mt-1 text-sm text-gray-900 col-span-2 whitespace-pre-wrap">{{ complaint.action_taken|default:"—" }}</dd>
+      </div>
+      {% if complaint.action_image %}
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="text-sm font-medium text-gray-500">Action Proof</dt>
+        <dd class="mt-1 text-sm col-span-2">
+          <a href="{{ complaint.action_image.url }}" target="_blank" class="text-blue-600 hover:underline">
+          <img src="{{ complaint.action_image.url }}" alt="Action Proof" class="mt-2 max-w-md rounded border"></a>
+        </dd>
+      </div>
+      {% endif %}
+    </dl>
+    <div class="mt-6 flex gap-3">
+      {% if user.is_staff or user.is_superuser %}
+      <a href="{% url 'Admin_Panel' %}" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Back to Admin Panel</a>
+      {% else %}
+      <a href="{% url 'home' %}" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Back</a>
+      {% if complaint.status == 'pending' %}
+      <a href="{% url 'edit_complaint' complaint.id %}" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Edit</a>
+      <a href="{% url 'delete_complaint' complaint.id %}" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete</a>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
