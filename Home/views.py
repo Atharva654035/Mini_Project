@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
 from .models import Complaint, ComplaintCategory, ComplaintUpdate
 import uuid
 
@@ -55,6 +56,7 @@ def signup_page(request):
     if request.method == 'POST':
         name = request.POST.get('signupName')
         username = request.POST.get('signupUsername')
+        email = request.POST.get('signupEmail')
         password = request.POST.get('signupPassword')
 
         user = User.objects.filter(username=username)
@@ -62,9 +64,14 @@ def signup_page(request):
             messages.info(request, 'Username already exists')
             return render(request,'signup.html')
 
+        if email and User.objects.filter(email=email).exists():
+            messages.info(request, 'Email already exists')
+            return render(request, 'signup.html')
+
         user = User.objects.create_user(
             first_name = name,
             username = username,
+            email = email if email else '',
             )
         user.set_password(password)
         user.save()
@@ -170,7 +177,7 @@ def Admin_Panel(request):
                 complaint.resolved_date = timezone.now()
             
             complaint.save()
-            
+
             # Log the status update
             ComplaintUpdate.objects.create(
                 complaint=complaint,
@@ -179,12 +186,40 @@ def Admin_Panel(request):
                 new_status=new_status,
                 update_message=f"Response: {admin_response} | Action: {complaint.action_taken}"
             )
-            
+
+            # Send email notification to user
+            if complaint.user.email:
+                try:
+                    subject = f'Update on Your Complaint #{complaint.id}'
+                    message = f"""Hello {complaint.user.first_name or complaint.user.username},
+
+The status of your complaint has been updated.
+
+Complaint ID: {complaint.id}
+New Status: {complaint.get_status_display()}
+Admin's Response: {admin_response if admin_response else 'N/A'}
+Action Taken: {complaint.action_taken if complaint.action_taken else 'N/A'}
+
+Thank you for your patience.
+
+Best regards,
+Complaint Management Team"""
+
+                    send_mail(
+                        subject,
+                        message,
+                        'noreply@complaintmanagement.com',
+                        [complaint.user.email],
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    messages.warning(request, f'Status updated but email notification failed: {str(e)}')
+
             messages.success(request, f'Complaint #{complaint_id} status updated to {new_status}')
-            
+
         except Complaint.DoesNotExist:
             messages.error(request, 'Complaint not found.')
-        
+
         return redirect('Admin_Panel')
     
     # Get all complaints with filtering options
