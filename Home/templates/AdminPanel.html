@@ -114,12 +114,14 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <a href="{% url 'view_complaint' c.id %}" class="text-indigo-600 hover:text-indigo-900 mr-2">View</a>
-                                    <button onclick="openStatusModal({{c.id}}, '{{c.status}}', '{{c.admin_response|default:""}}', '{{c.action_taken|default:""}}')"
-                                        class="text-blue-600 hover:text-blue-900 mr-2">Update</button>
-                                    {% if c.complaint_img %}
-                                    <a href="{{c.complaint_img.url}}" target="_blank" class="text-green-600 hover:text-green-900">View File</a>
-                                    {% endif %}
+                                    <div class="flex gap-2">
+                                        <a href="{% url 'view_complaint' c.id %}" class="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">View</a>
+                                        <button onclick="openStatusModal({{c.id}}, '{{c.status}}', '{{c.admin_response|default:""}}', '{{c.action_taken|default:""}}')"
+                                            class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Update</button>
+                                        {% if c.complaint_img %}
+                                        <a href="{{c.complaint_img.url}}" target="_blank" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition">View File</a>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% empty %}
