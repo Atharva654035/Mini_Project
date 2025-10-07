@@ -76,6 +76,10 @@ def signup_page(request):
             messages.info(request, 'Email already exists')
             return render(request, 'signup.html')
 
+        if email and User.objects.filter(email=email).exists():
+            messages.info(request, 'Email already exists')
+            return render(request, 'signup.html')
+
         user = User.objects.create_user(
             first_name=name,
             username=username,
@@ -227,9 +231,7 @@ Thank you for your patience.
 Best regards,
 Management Team"""
 
-                email_host_user = getattr(settings, 'EMAIL_HOST_USER', '')
-                email_host_password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
-                from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', '') or email_host_user
+                from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', '') or getattr(settings, 'EMAIL_HOST_USER', '')
 
                 try:
                     send_mail(
@@ -238,7 +240,7 @@ Management Team"""
                         from_email,
                         [complaint.user.email],
                         fail_silently=False,
-                        )
+                    )
                 except Exception as e:
                     messages.warning(request, f'Status updated but email notification failed: {str(e)}')
 

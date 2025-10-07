@@ -113,15 +113,20 @@
                                         {{c.get_status_display}}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-wrap items-center gap-3">
-                                    <a href="{% url 'view_complaint' c.id %}" class="text-blue-600 hover:text-blue-900">View</a>
-                                    <button type="button"
-                                        data-complaint-id="{{c.id}}"
-                                        data-status="{{c.status}}"
-                                        data-response="{{c.admin_response|default_if_none:''|escapejs}}"
-                                        data-action="{{c.action_taken|default_if_none:''|escapejs}}"
-                                        onclick="openStatusModal(this.dataset.complaintId, this.dataset.status, this.dataset.response, this.dataset.action)"
-                                        class="text-green-600 hover:text-green-900">Update</button>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex items-center gap-2">
+                                        <a href="{% url 'view_complaint' c.id %}" class="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">View</a>
+                                        <button type="button"
+                                            data-complaint-id="{{c.id}}"
+                                            data-status="{{c.status}}"
+                                            data-response="{{c.admin_response|default_if_none:''|escapejs}}"
+                                            data-action="{{c.action_taken|default_if_none:''|escapejs}}"
+                                            onclick="openStatusModal(this.dataset.complaintId, this.dataset.status, this.dataset.response, this.dataset.action)"
+                                            class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Update</button>
+                                        {% if c.complaint_img %}
+                                        <a href="{{c.complaint_img.url}}" target="_blank" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition">View File</a>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% empty %}
