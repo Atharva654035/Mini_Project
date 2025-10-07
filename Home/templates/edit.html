@@ -12,13 +12,9 @@
     <form method="POST" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Full Name</label>
-          <input type="text" name="name" value="{{ complaint.name }}" class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg" required />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Division</label>
-          <input type="text" name="division" value="{{ complaint.division }}" class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg" required />
+        <div class="p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-gray-700">
+          <p><span class="font-semibold">Name:</span> {{ request.user.first_name|default:request.user.username }}</p>
+          <p class="mt-1"><span class="font-semibold">Division:</span> {{ profile.division|default:"Not set" }}</p>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700">Category (Optional)</label>

@@ -9,6 +9,9 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
+from django.core.mail import send_mail
+from Accounts.models import StudentProfile
 from .models import Complaint, ComplaintCategory, ComplaintUpdate
 import uuid
 
@@ -17,11 +20,10 @@ try:
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
     from reportlab.lib.pagesizes import letter
     from reportlab.lib import colors
+
     PDF_AVAILABLE = True
 except ImportError:
     PDF_AVAILABLE = False
-
-
 
 
 # Create your views here.
@@ -47,41 +49,65 @@ def login_page(request):
             return redirect('home')
     return render(request, 'login.html')
 
+
 def logout_page(request):
     logout(request)
-    return render(request,'login.html')
+    return render(request, 'login.html')
+
 
 def signup_page(request):
     if request.method == 'POST':
         name = request.POST.get('signupName')
         username = request.POST.get('signupUsername')
+        email = request.POST.get('signupEmail')
         password = request.POST.get('signupPassword')
+        division = request.POST.get('signupDivision')
+
+        if not division:
+            messages.info(request, 'Division is required to complete signup.')
+            return render(request, 'signup.html')
 
         user = User.objects.filter(username=username)
         if user.exists():
             messages.info(request, 'Username already exists')
-            return render(request,'signup.html')
+            return render(request, 'signup.html')
+
+        if email and User.objects.filter(email=email).exists():
+            messages.info(request, 'Email already exists')
+            return render(request, 'signup.html')
 
         user = User.objects.create_user(
-            first_name = name,
-            username = username,
-            )
+            first_name=name,
+            username=username,
+            email=email if email else '',
+        )
         user.set_password(password)
         user.save()
+
+        StudentProfile.objects.update_or_create(
+            user=user,
+            defaults={'division': division}
+        )
 
         messages.info(request, "user created successfully")
 
     return render(request, 'signup.html')
 
+
 @login_required(login_url='/')
 def home(request):
     if request.method == 'POST':
-        name = request.POST.get('name')
-        division = request.POST.get('division')
         complaint_text = request.POST.get('complaint')
         complaint_img = request.FILES.get('complaint_img')
         category_id = request.POST.get('category')
         priority = request.POST.get('priority', 'medium')
+
+        profile, _ = StudentProfile.objects.get_or_create(user=request.user, defaults={'division': ''})
+        if not profile.division:
+            messages.error(request, 'Division information is missing. Please contact support to update your profile.')
+            return redirect('home')
+
+        display_name = (request.user.first_name or '').strip() or request.user.username
 
         # Get category object if provided
         category = None
@@ -94,8 +120,8 @@ def home(request):
         # Create complaint using Django ORM
         complaint_obj = Complaint.objects.create(
             user=request.user,
-            name=name,
-            division=division,
+            name=display_name,
+            division=profile.division,
             complaint=complaint_text,
             complaint_img=complaint_img,
             category=category,
@@ -108,10 +134,13 @@ def home(request):
     # Get user's complaints and categories for the form
     user_complaints = Complaint.objects.filter(user=request.user)
     categories = ComplaintCategory.objects.all()
-    
+
+    profile, _ = StudentProfile.objects.get_or_create(user=request.user, defaults={'division': ''})
+
     context = {
         'complaints': user_complaints,
-        'categories': categories
+        'categories': categories,
+        'profile': profile
     }
     return render(request, 'OpeningPage.html', context)
 
@@ -120,7 +149,7 @@ def Admin_Login(request):
     if request.method == 'POST':
         username = request.POST.get('adminUsername')
         password = request.POST.get('adminPassword')
-        
+
         # Debug: Check if user exists
         if not User.objects.filter(username=username).exists():
             messages.error(request, f'User "{username}" does not exist.')
@@ -142,35 +171,36 @@ def Admin_Login(request):
 
     return render(request, 'AdminLogin.html')
 
+
 @login_required(login_url='/AdminLogin/')
 def Admin_Panel(request):
     if not (request.user.is_staff or request.user.is_superuser):
         messages.error(request, 'Access denied. Admin privileges required.')
         return redirect('login_page')
-    
+
     # Handle status updates
     if request.method == 'POST':
         complaint_id = request.POST.get('complaint_id')
         new_status = request.POST.get('new_status')
         admin_response = request.POST.get('admin_response', '')
-        
+
         try:
             complaint = Complaint.objects.get(id=complaint_id)
             old_status = complaint.status
-            
+
             complaint.status = new_status
             complaint.admin_response = admin_response
             complaint.action_taken = request.POST.get('action_taken', '')
-            
+
             # Handle action image upload
             if 'action_image' in request.FILES:
                 complaint.action_image = request.FILES['action_image']
-            
+
             if new_status == 'resolved':
                 complaint.resolved_date = timezone.now()
-            
+
             complaint.save()
-            
+
             # Log the status update
             ComplaintUpdate.objects.create(
                 complaint=complaint,
@@ -179,22 +209,54 @@ def Admin_Panel(request):
                 new_status=new_status,
                 update_message=f"Response: {admin_response} | Action: {complaint.action_taken}"
             )
-            
+
+            # Send email notification to user
+            if complaint.user.email:
+                subject = f'Update on Your Complaint #{complaint.id}'
+                message = f"""Hello {complaint.user.first_name or complaint.user.username},
+
+The status of your complaint has been updated.
+
+Complaint ID: {complaint.id}
+New Status: {complaint.get_status_display()}
+Admin's Response: {admin_response if admin_response else 'N/A'}
+Action Taken: {complaint.action_taken if complaint.action_taken else 'N/A'}
+
+Thank you for your patience.
+
+Best regards,
+Management Team"""
+
+                email_host_user = getattr(settings, 'EMAIL_HOST_USER', '')
+                email_host_password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
+                from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', '') or email_host_user
+
+                try:
+                    send_mail(
+                        subject,
+                        message,
+                        from_email,
+                        [complaint.user.email],
+                        fail_silently=False,
+                        )
+                except Exception as e:
+                    messages.warning(request, f'Status updated but email notification failed: {str(e)}')
+
             messages.success(request, f'Complaint #{complaint_id} status updated to {new_status}')
-            
+
         except Complaint.DoesNotExist:
             messages.error(request, 'Complaint not found.')
-        
+
         return redirect('Admin_Panel')
-    
+
     # Get all complaints with filtering options
     complaints = Complaint.objects.all().select_related('user', 'category').order_by('-complaint_date')
-    
+
     # Filter by status if specified
     status_filter = request.GET.get('status')
     if status_filter:
         complaints = complaints.filter(status=status_filter)
-    
+
     # Search functionality
     search_query = request.GET.get('search')
     if search_query:
@@ -204,7 +266,7 @@ def Admin_Panel(request):
             models.Q(complaint__icontains=search_query) |
             models.Q(user__username__icontains=search_query)
         )
-    
+
     context = {
         'complaints': complaints,
         'status_choices': Complaint.STATUS_CHOICES,
@@ -212,8 +274,9 @@ def Admin_Panel(request):
         'current_status_filter': status_filter,
         'current_search': search_query,
     }
-    
+
     return render(request, 'AdminPanel.html', context)
+
 
 @login_required(login_url='/AdminLogin/')
 def download_complaints_pdf(request):
@@ -221,23 +284,23 @@ def download_complaints_pdf(request):
     if not (request.user.is_staff or request.user.is_superuser):
         messages.error(request, 'Access denied. Admin privileges required.')
         return redirect('login_page')
-    
+
     if not PDF_AVAILABLE:
         messages.error(request, 'PDF generation is not available. Please install reportlab.')
         return redirect('Admin_Panel')
-    
+
     # Create the HttpResponse object with the appropriate PDF headers
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="complaints_report.pdf"'
-    
+
     # Fetch complaints from Django ORM (instead of direct MySQL)
     complaints = Complaint.objects.all().select_related('user', 'category').order_by('-complaint_date')
-    
+
     # Apply same filters as admin panel
     status_filter = request.GET.get('status')
     if status_filter:
         complaints = complaints.filter(status=status_filter)
-    
+
     search_query = request.GET.get('search')
     if search_query:
         complaints = complaints.filter(
@@ -246,16 +309,16 @@ def download_complaints_pdf(request):
             models.Q(complaint__icontains=search_query) |
             models.Q(user__username__icontains=search_query)
         )
-    
+
     # Add table header
     data = [["ID", "User", "Name", "Division", "Complaint", "Date & Time", "Status", "Priority"]]
-    
+
     # Helper function for wrapping long text
     def wrap_text(text, width=30):
         if not text:
             return ""
         return "\n".join(textwrap.wrap(str(text), width))
-    
+
     # Add complaint data
     for complaint in complaints:
         wrapped_row = [
@@ -269,11 +332,11 @@ def download_complaints_pdf(request):
             complaint.get_priority_display()
         ]
         data.append(wrapped_row)
-    
+
     # Create PDF using response as file
     pdf = SimpleDocTemplate(response, pagesize=letter)
     table = Table(data, repeatRows=1, colWidths=[30, 60, 70, 60, 120, 80, 60, 50])  # repeat header on new pages
-    
+
     # Add style to the table
     style = TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.cyan),
@@ -287,13 +350,14 @@ def download_complaints_pdf(request):
         ("GRID", (0, 0), (-1, -1), 1, colors.black),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
     ])
-    
+
     table.setStyle(style)
-    
+
     # Build the PDF
     pdf.build([table])
-    
+
     return response
+
 
 @login_required(login_url='/')
 def view_complaint(request, complaint_id):
@@ -309,6 +373,7 @@ def view_complaint(request, complaint_id):
         messages.error(request, 'Complaint not found or access denied.')
         return redirect('home')
 
+
 @login_required(login_url='/')
 def edit_complaint(request, complaint_id):
     """Edit user's own complaint"""
@@ -322,8 +387,10 @@ def edit_complaint(request, complaint_id):
 
         if request.method == 'POST':
             # Update complaint fields
-            complaint.name = request.POST.get('name')
-            complaint.division = request.POST.get('division')
+            profile, _ = StudentProfile.objects.get_or_create(user=request.user, defaults={'division': ''})
+            complaint.name = (request.user.first_name or '').strip() or request.user.username
+            if profile.division:
+                complaint.division = profile.division
             complaint.complaint = request.POST.get('complaint')
             complaint.priority = request.POST.get('priority', 'medium')
 
@@ -347,15 +414,18 @@ def edit_complaint(request, complaint_id):
             return redirect('home')
 
         categories = ComplaintCategory.objects.all()
+        profile, _ = StudentProfile.objects.get_or_create(user=request.user, defaults={'division': ''})
         context = {
             'complaint': complaint,
-            'categories': categories
+            'categories': categories,
+            'profile': profile
         }
         return render(request, 'edit.html', context)
 
     except Complaint.DoesNotExist:
         messages.error(request, 'Complaint not found or access denied.')
         return redirect('home')
+
 
 @login_required(login_url='/')
 def delete_complaint(request, complaint_id):
@@ -379,4 +449,3 @@ def delete_complaint(request, complaint_id):
     except Complaint.DoesNotExist:
         messages.error(request, 'Complaint not found or access denied.')
         return redirect('home')
-

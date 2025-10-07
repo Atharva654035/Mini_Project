@@ -113,13 +113,15 @@
                                         {{c.get_status_display}}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <a href="{% url 'view_complaint' c.id %}" class="text-indigo-600 hover:text-indigo-900 mr-2">View</a>
-                                    <button onclick="openStatusModal({{c.id}}, '{{c.status}}', '{{c.admin_response|default:""}}', '{{c.action_taken|default:""}}')"
-                                        class="text-blue-600 hover:text-blue-900 mr-2">Update</button>
-                                    {% if c.complaint_img %}
-                                    <a href="{{c.complaint_img.url}}" target="_blank" class="text-green-600 hover:text-green-900">View File</a>
-                                    {% endif %}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium flex flex-wrap items-center gap-3">
+                                    <a href="{% url 'view_complaint' c.id %}" class="text-blue-600 hover:text-blue-900">View</a>
+                                    <button type="button"
+                                        data-complaint-id="{{c.id}}"
+                                        data-status="{{c.status}}"
+                                        data-response="{{c.admin_response|default_if_none:''|escapejs}}"
+                                        data-action="{{c.action_taken|default_if_none:''|escapejs}}"
+                                        onclick="openStatusModal(this.dataset.complaintId, this.dataset.status, this.dataset.response, this.dataset.action)"
+                                        class="text-green-600 hover:text-green-900">Update</button>
                                 </td>
                             </tr>
                             {% empty %}
