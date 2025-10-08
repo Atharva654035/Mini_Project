@@ -132,6 +132,36 @@ def home(request):
             priority=priority
         )
 
+        # Send confirmation email to user
+        if request.user.email:
+            subject = f'Complaint #{complaint_obj.id} Submitted Successfully'
+            category_name = complaint_obj.category.name if complaint_obj.category else 'N/A'
+            submitted_at = timezone.localtime(complaint_obj.complaint_date)
+            message = (
+                f"Hello {display_name},\n\n"
+                "Your complaint has been successfully registered. Our team will review it shortly.\n\n"
+                f"Complaint ID: {complaint_obj.id}\n"
+                f"Category: {category_name}\n"
+                f"Priority: {complaint_obj.get_priority_display()}\n"
+                f"Submitted on: {submitted_at.strftime('%b %d, %Y %H:%M')}\n\n"
+                "You can log in anytime to track progress or provide additional details.\n\n"
+                "Thank you for helping us improve.\n"
+                "Complaint Management Team"
+            )
+
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', '') or getattr(settings, 'EMAIL_HOST_USER', '')
+
+            try:
+                send_mail(
+                    subject,
+                    message,
+                    from_email,
+                    [request.user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                messages.warning(request, f'Complaint saved but email notification failed: {str(e)}')
+
         messages.success(request, f'Your Complaint ID #{complaint_obj.id} submitted successfully!')
         return redirect('home')
 

@@ -123,9 +123,6 @@
                                             data-action="{{c.action_taken|default_if_none:''|escapejs}}"
                                             onclick="openStatusModal(this.dataset.complaintId, this.dataset.status, this.dataset.response, this.dataset.action)"
                                             class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Update</button>
-                                        {% if c.complaint_img %}
-                                        <a href="{{c.complaint_img.url}}" target="_blank" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition">View File</a>
-                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>
