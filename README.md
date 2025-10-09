@@ -3,8 +3,8 @@
 > 🎯 A secure, student-friendly complaint management portal built with Django, empowering institutions to receive, track, and resolve issues transparently.
 
 ## 👨‍💻 Developers
-- **Lead Developer**: _Add name_
-- **Contributors**: _Add names/roles_
+- **Lead Developer**: [Atharva (GitHub)](https://github.com/Atharva654035)
+- **Contributors**: [Add teammate](https://github.com/username) — update with your collaborators
 
 ## 🧠 Overview
 `MiniProject/` orchestrates a full-stack workflow where students raise complaints, admins triage and resolve them, and both parties stay informed through in-app statuses and email alerts (`Home/views.py`, `Home/models.py`). Sensitive complaint content is encrypted at rest via the custom fields in `Home/encryption.py`, ensuring privacy even on shared infrastructure.
