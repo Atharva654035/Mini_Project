@@ -84,11 +84,11 @@ WSGI_APPLICATION = 'MiniProject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'complaint_system',    # your DB name
-        'USER': 'root',                # your MySQL user
-        'PASSWORD': 'spartans@123',    # your MySQL password
-        'HOST': 'localhost',           # DB host
-        'PORT': '3306',                # default MySQL port
+        'NAME': os.environ.get('DB_NAME'),            # your DB name
+        'USER': os.environ.get('DB_USER'),            # your MySQL user
+        'PASSWORD': os.environ.get('DB_PASSWORD'),    # your MySQL password
+        'HOST': os.environ.get('DB_HOST'),            # DB host
+        'PORT': os.environ.get('DB_PORT'),            # default MySQL port
     }
 }
 
