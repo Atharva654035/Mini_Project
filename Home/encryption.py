@@ -14,8 +14,7 @@ class EncryptionManager:
     
     def __init__(self):
         # Use a secret key from settings or environment
-        secret_key = getattr(settings, 'ENCRYPTION_KEY', 'default-secret-key-change-in-production')
-        
+        secret_key = getattr(settings, 'ENCRYPTION_KEY')
         # Generate a key from the secret
         password = secret_key.encode()
         salt = b'salt_1234567890'  # In production, use a random salt per installation

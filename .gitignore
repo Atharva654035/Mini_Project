@@ -121,3 +121,6 @@ dmypy.json
 
 # pytype static analyzer
 .pytype/
+
+# media files
+media
