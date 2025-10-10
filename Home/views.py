@@ -146,7 +146,7 @@ def home(request):
                 f"Submitted on: {submitted_at.strftime('%b %d, %Y %H:%M')}\n\n"
                 "You can log in anytime to track progress or provide additional details.\n\n"
                 "Thank you for helping us improve.\n"
-                "Complaint Management Team"
+                "Management Team"
             )
 
             from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', '') or getattr(settings, 'EMAIL_HOST_USER', '')
