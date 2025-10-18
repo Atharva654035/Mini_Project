@@ -79,6 +79,7 @@ Store secrets in `.env` (loaded in `MiniProject/settings.py`). Minimum keys:
 ## 🧪 Prerequisites
 - **Python 3.11+** with `pip` available.
 - **MySQL client libraries** installed locally (`mysqlclient` build dependencies) or use a pre-configured container.
+- **python-dotenv** for loading `.env` files (installed via `Requirement.txt`).
 - Optional: **virtualenv** or **venv** for isolated environments.
 
 ## ⚙️ Setup & Installation
@@ -107,7 +108,8 @@ Store secrets in `.env` (loaded in `MiniProject/settings.py`). Minimum keys:
   ```bash
   python manage.py createsuperuser
   ```
-- **Sync complaint categories**: Seed manually via admin panel or custom management command (to be added) to keep hosted DB usage minimal.
+- **Log in with superuser credentials** at `http://localhost:8000/AdminLogin/` to unlock the admin workflow.
+- **Sync complaint categories**: Seed manually via admin panel (see `ComplaintCategory` in `Home/models.py`) or keep an eye on the planned management command to standardize taxonomy.
 
 ## 🚀 Running the Application
 - **Start the development server**:
@@ -115,6 +117,11 @@ Store secrets in `.env` (loaded in `MiniProject/settings.py`). Minimum keys:
   python manage.py runserver
   ```
 - Visit `http://localhost:8000/` for the student portal and `http://localhost:8000/AdminLogin/` for admins.
+
+## 🖼️ Media Files
+- **Local storage**: Uploaded evidence and action images are written to `media/` (`MEDIA_ROOT` in `MiniProject/settings.py`).
+- **Serving in development**: Add `django.conf.urls.static.static` helpers or rely on the built-in dev server when `DEBUG=True` to expose `MEDIA_URL`.
+- **Production storage**: Configure cloud storage (S3, Cloudinary, etc.) and tighten file type/size validation in `Home/models.py` or via upload forms.
 
 ## 📧 Email Notifications
 - Configure SMTP via `.env`. Gmail users should create an app password when 2FA is enabled.
@@ -141,9 +148,16 @@ sequenceDiagram
 
 ## 🔐 Security & Privacy
 - **Encryption**: Names and complaint bodies are encrypted before persistence (`Home/encryption.py`).
+- **Salt customization**: Update the static salt in `Home/encryption.py` (`salt_1234567890`) per deployment to maximize Fernet strength.
 - **Role separation**: Admin-only routes protected by `@login_required` plus staff checks.
 - **CSRF & session integrity**: Django middleware stack (`MIDDLEWARE` in `settings.py`).
-- **File validations**: Evidence and action images stored under managed `media/` paths; integrate antivirus or size limits in production.
+- **File validations**: Evidence and action images stored under managed `media/` paths; enforce content-type and size checks before production rollout.
+
+## 🛡️ Production Hardening
+- **Secrets**: Override `SECRET_KEY` via environment variables and rotate it regularly.
+- **Debug & hosts**: Set `DEBUG=False` and populate `ALLOWED_HOSTS` in `MiniProject/settings.py` before deployment.
+- **Transport security**: Ensure only one of `EMAIL_USE_TLS` or `EMAIL_USE_SSL` is `True` (the settings guard enforces this at runtime).
+- **Database access**: Restrict database user permissions to the minimum required for ORM operations.
 
 ## 🧭 Admin Panel Highlights
 - **Dynamic filtering**: Prioritize workloads with status and search filters.
