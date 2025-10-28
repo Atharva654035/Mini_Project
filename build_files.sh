@@ -6,7 +6,9 @@ set -e
 echo "Building project..."
 
 # Install Python dependencies
-pip install -r Requirement.txt
+python -m pip install -r Requirement.txt
 
 # Run Django collectstatic
 python manage.py collectstatic --noinput
+
+echo "Build complete."
