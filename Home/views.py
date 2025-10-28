@@ -135,18 +135,14 @@ def home(request):
         # Send confirmation email to user
         if request.user.email:
             subject = f'Complaint #{complaint_obj.id} Submitted Successfully'
-            category_name = complaint_obj.category.name if complaint_obj.category else 'N/A'
-            submitted_at = timezone.localtime(complaint_obj.complaint_date)
             message = (
                 f"Hello {display_name},\n\n"
-                "Your complaint has been successfully registered. Our team will review it shortly.\n\n"
-                f"Complaint ID: {complaint_obj.id}\n"
-                f"Category: {category_name}\n"
-                f"Priority: {complaint_obj.get_priority_display()}\n"
-                f"Submitted on: {submitted_at.strftime('%b %d, %Y %H:%M')}\n\n"
-                "You can log in anytime to track progress or provide additional details.\n\n"
-                "Thank you for helping us improve.\n"
-                "Management Team"
+                f"We have received your complaint (ID: {complaint_obj.id}).\n"
+                "Our team is currently reviewing the details and will update you once the status changes.\n\n"
+                "Thank you for bringing this to our attention.\n"
+                "We appreciate your patience and will work to resolve it as quickly as possible.\n\n"
+                "Regards,\n"
+                "Management Team\n"
             )
 
             from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', '') or getattr(settings, 'EMAIL_HOST_USER', '')
@@ -249,17 +245,18 @@ def Admin_Panel(request):
                 subject = f'Update on Your Complaint #{complaint.id}'
                 message = f"""Hello {complaint.user.first_name or complaint.user.username},
 
-The status of your complaint has been updated.
+We would like to inform you that the status of your complaint (ID: {complaint.id}) has been updated.
+Current Status: {complaint.get_status_display()}
 
-Complaint ID: {complaint.id}
-New Status: {complaint.get_status_display()}
-Admin's Response: {admin_response if admin_response else 'N/A'}
-Action Taken: {complaint.action_taken if complaint.action_taken else 'N/A'}
+If you have any further questions or need assistance, feel free to reply to this email.
 
-Thank you for your patience.
+Thank you for your cooperation.
 
-Best regards,
-Management Team"""
+Regards,
+Management Team
+
+
+"""
 
                 from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', '') or getattr(settings, 'EMAIL_HOST_USER', '')
 
@@ -273,6 +270,38 @@ Management Team"""
                     )
                 except Exception as e:
                     messages.warning(request, f'Status updated but email notification failed: {str(e)}')
+
+                if new_status == 'resolved':
+                    resolved_subject = f'Complaint #{complaint.id} Resolved'
+                    resolved_at = complaint.resolved_date or timezone.now()
+                    resolved_timestamp = timezone.localtime(resolved_at).strftime('%b %d, %Y %H:%M')
+                    resolution_notes = admin_response if admin_response else 'No resolution notes were provided.'
+                    action_notes = complaint.action_taken if complaint.action_taken else 'No additional actions recorded.'
+
+                    resolved_message = f"""Hello {complaint.user.first_name or complaint.user.username},
+
+Your complaint (ID: {complaint.id}) has been marked as resolved.
+
+We hope the issue was addressed to your satisfaction.
+If you believe it is not resolved or requires further attention, you may reopen a new complaint anytime.
+
+Thank you for your trust.
+
+Warm Regards,
+Management Team
+
+"""
+
+                    try:
+                        send_mail(
+                            resolved_subject,
+                            resolved_message,
+                            from_email,
+                            [complaint.user.email],
+                            fail_silently=False,
+                        )
+                    except Exception as e:
+                        messages.warning(request, f'Resolution email could not be sent: {str(e)}')
 
             messages.success(request, f'Complaint #{complaint_id} status updated to {new_status}')
 
