@@ -1,0 +1,21 @@
+[build]
+  command = "python manage.py collectstatic --noinput"
+  publish = "staticfiles"
+
+[build.environment]
+  PYTHON_VERSION = "3.9"
+  NODE_VERSION = "16"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[dev]
+  command = "python manage.py runserver"
+  targetPort = 8000
+  publish = "staticfiles"
+  autoLaunch = true
