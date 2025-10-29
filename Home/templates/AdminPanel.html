@@ -45,6 +45,79 @@
                 {% endfor %}
             </div>
             {% endif %}
+
+            <!-- Analytics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Complaints Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Total Complaints</p>
+                            <p class="text-2xl font-bold text-gray-800">{{ total_complaints }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending + In-Progress Complaints Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-yellow-500">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Pending + In Progress</p>
+                            <p class="text-2xl font-bold text-gray-800">{{ pending_complaints }}</p>
+                            <p class="text-xs text-gray-500 mt-1">({{ in_progress }} in progress)</p>
+                            {% if pending_percent > 0 %}
+                            <p class="text-xs text-yellow-600 mt-1">{{ pending_percent|floatformat:1 }}% of total</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resolved Complaints Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Resolved Complaints</p>
+                            <p class="text-2xl font-bold text-gray-800">{{ resolved_complaints }}</p>
+                            {% if resolved_percent > 0 %}
+                            <p class="text-xs text-green-600 mt-1">{{ resolved_percent|floatformat:1 }}% of total</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rejected Complaints Card -->
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-red-100 text-red-600 mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Rejected Complaints</p>
+                            <p class="text-2xl font-bold text-gray-800">{{ rejected_complaints }}</p>
+                            {% if rejected_percent > 0 %}
+                            <p class="text-xs text-red-600 mt-1">{{ rejected_percent|floatformat:1 }}% of total</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Filter and Search Section -->
             <div class="bg-white p-4 rounded-xl shadow-lg mb-6">
                 <form method="GET" class="flex flex-wrap gap-4">

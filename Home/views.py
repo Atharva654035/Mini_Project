@@ -328,12 +328,36 @@ Management Team
             models.Q(user__username__icontains=search_query)
         )
 
+    # Calculate analytics data
+    total_complaints = complaints.count()
+    pending_complaints = complaints.filter(status='pending').count()
+    in_progress = complaints.filter(status='in_progress').count()
+    resolved_complaints = complaints.filter(status='resolved').count()
+    rejected_complaints = complaints.filter(status='rejected').count()
+    
+    # Combine pending and in-progress for the pending card
+    pending_plus_in_progress = pending_complaints + in_progress
+    
+    # Calculate percentages (avoid division by zero)
+    pending_percent = (pending_plus_in_progress / total_complaints * 100) if total_complaints > 0 else 0
+    resolved_percent = (resolved_complaints / total_complaints * 100) if total_complaints > 0 else 0
+    rejected_percent = (rejected_complaints / total_complaints * 100) if total_complaints > 0 else 0
+
     context = {
         'complaints': complaints,
         'status_choices': Complaint.STATUS_CHOICES,
         'priority_choices': Complaint.PRIORITY_CHOICES,
         'current_status_filter': status_filter,
         'current_search': search_query,
+        # Analytics data
+        'total_complaints': total_complaints,
+        'pending_complaints': pending_plus_in_progress,  # Combined pending + in-progress
+        'in_progress': in_progress,  # Still pass in_progress separately for display
+        'resolved_complaints': resolved_complaints,
+        'rejected_complaints': rejected_complaints,
+        'pending_percent': pending_percent,
+        'resolved_percent': resolved_percent,
+        'rejected_percent': rejected_percent,
     }
 
     return render(request, 'AdminPanel.html', context)
